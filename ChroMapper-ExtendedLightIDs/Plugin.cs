@@ -60,8 +60,8 @@ public class Plugin {
 			var lm = descriptor.LightingManagers[ids.Key];
 			Debug.Log($"Adding type {ids.Key} from {lm.LightIDPlacementMapReverse.Count} to {ids.Value}");
 			for (int i = lm.LightIDPlacementMapReverse.Count + 1; i <= ids.Value; ++i) {
-				lm.LightIDPlacementMap.Add(i - 1, i);
-				lm.LightIDPlacementMapReverse.Add(i, i - 1);
+				lm.LightIDPlacementMap.TryAdd(i - 1, i);
+				lm.LightIDPlacementMapReverse.TryAdd(i, i - 1);
 			}
 		}
 	}
