@@ -4,6 +4,9 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
+using Beatmap.Base;
+using Beatmap.Enums;
+
 namespace ChroMapper_MoarLightIDs {
 
 [Plugin("Extended LightIDs")]
@@ -14,6 +17,10 @@ public class Plugin {
 	private void Init() {
 		LoadInitialMap.PlatformLoadedEvent += PlatformLoaded;
 		LoadInitialMap.LevelLoadedEvent += AddIds;
+		CMInputCallbackInstaller.InputInstance.EventGrid.ToggleLightPropagation.performed += Update;
+		CMInputCallbackInstaller.InputInstance.EventGrid.CycleLightPropagationUp.performed += Update;
+		CMInputCallbackInstaller.InputInstance.EventGrid.CycleLightPropagationDown.performed += Update;
+		CMInputCallbackInstaller.InputInstance.EventGrid.ToggleLightIdMode.performed += Update;
 	}
 	
 	public void PlatformLoaded(PlatformDescriptor descriptor) {
@@ -39,7 +46,8 @@ public class Plugin {
 		}
 		
 		// Get max from events
-		foreach (var ev in BeatSaberSongContainer.Instance.Map.Events) {
+		foreach (var o in BeatmapObjectContainerCollection.GetCollectionForType(Beatmap.Enums.ObjectType.Event).UnsortedObjects) {
+			var ev = (BaseEvent)o;
 			if (ev.CustomLightID != null) {
 				int old_max = 0;
 				max_ids.TryGetValue(ev.Type, out old_max);
@@ -56,6 +64,10 @@ public class Plugin {
 				lm.LightIDPlacementMapReverse.Add(i, i - 1);
 			}
 		}
+	}
+	
+	public void Update(InputAction.CallbackContext context) {
+		AddIds();
 	}
 	
 	public int GuessType(Beatmap.Base.Customs.BaseEnvironmentEnhancement eh) {
