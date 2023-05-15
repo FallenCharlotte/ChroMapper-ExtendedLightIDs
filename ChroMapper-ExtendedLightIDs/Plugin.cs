@@ -1,82 +1,57 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 using Beatmap.Base;
 using Beatmap.Enums;
 
-namespace ChroMapper_MoarLightIDs {
+namespace ChroMapper_ExtendedLightIDs {
 
 [Plugin("Extended LightIDs")]
 public class Plugin {
-	private PlatformDescriptor descriptor;
-	private Dictionary<int, SortedSet<int>> ids = new Dictionary<int, SortedSet<int>>();
+	public IDManager manager;
 	
 	[Init]
 	private void Init() {
-		LoadInitialMap.PlatformLoadedEvent += PlatformLoaded;
-		LoadInitialMap.LevelLoadedEvent += RefreshIDs;
-		CMInputCallbackInstaller.InputInstance.EventGrid.ToggleLightPropagation.performed += (_) => RefreshIDs();
-		CMInputCallbackInstaller.InputInstance.EventGrid.CycleLightPropagationUp.performed += (_) => RefreshIDs();
-		CMInputCallbackInstaller.InputInstance.EventGrid.CycleLightPropagationDown.performed += (_) => RefreshIDs();
-		CMInputCallbackInstaller.InputInstance.EventGrid.ToggleLightIdMode.performed += (_) => RefreshIDs();
-	}
-	
-	public void PlatformLoaded(PlatformDescriptor descriptor) {
-		this.descriptor = descriptor;
-	}
-	
-	public SortedSet<int> IDsForType(int type) {
-		if (!ids.ContainsKey(type)) {
-			var lm = descriptor.LightingManagers[type];
-			ids.Add(type, new SortedSet<int>(lm.LightIDPlacementMap.Values));
-		}
-		return ids[type];
-	}
-	
-	public void RefreshIDs() {
-		// Get IDs from Environment Enhancements, V3 only
-		foreach (var eh in BeatSaberSongContainer.Instance.Map.EnvironmentEnhancements) {
-			if (eh.LightID is int id) {
-				int type = (eh.Components["ILightWithId"].HasKey("type"))
-					? eh.Components["ILightWithId"]["type"].AsInt
-					: -1;
-				if (type < 0) {
-					continue;
-				}
-				IDsForType(type).Add(id);
-			}
-		}
+		SceneManager.sceneLoaded += SceneLoaded;
 		
-		// Get IDs from events
-		foreach (var o in BeatmapObjectContainerCollection.GetCollectionForType(Beatmap.Enums.ObjectType.Event).UnsortedObjects) {
-			var ev = (BaseEvent)o;
-			if (ev.CustomLightID != null) {
-				IDsForType(ev.Type).UnionWith(ev.CustomLightID);
-				Debug.Log(string.Join(",", IDsForType(ev.Type).ToList()));
-			}
-		}
+		LoadInitialMap.PlatformLoadedEvent += (p) => manager.PlatformLoaded(p);
+		LoadInitialMap.LevelLoadedEvent += () => manager.RefreshIDs();
+		CMInputCallbackInstaller.InputInstance.EventGrid.ToggleLightPropagation.performed += (_) => manager.RefreshIDs();
+		CMInputCallbackInstaller.InputInstance.EventGrid.CycleLightPropagationUp.performed += (_) => manager.RefreshIDs();
+		CMInputCallbackInstaller.InputInstance.EventGrid.CycleLightPropagationDown.performed += (_) => manager.RefreshIDs();
+		CMInputCallbackInstaller.InputInstance.EventGrid.ToggleLightIdMode.performed += (_) => manager.RefreshIDs();
 		
-		// Add them all
-		foreach (var type in ids) {
-			var lm = descriptor.LightingManagers[type.Key];
-			
-			var i = 0;
-			lm.LightIDPlacementMap.Clear();
-			lm.LightIDPlacementMapReverse.Clear();
-			foreach (var id in type.Value) {
-				lm.LightIDPlacementMap.Add(i, id);
-				lm.LightIDPlacementMapReverse.Add(id, i);
-				++i;
-			}
+		ExtensionButtons.AddButton(
+			LoadSprite("ChroMapper_ExtendedLightIDs.Resources.Icon.png"),
+			"Extend Light IDs",
+			() => {});
+	}
+	
+	private void SceneLoaded(Scene scene, LoadSceneMode mode) {
+		if (scene.buildIndex == 3) {
+			manager = new IDManager();
 		}
 	}
 	
 	[Exit]
 	private void Exit() {
 		
+	}
+	
+	public static Sprite LoadSprite(string asset) {
+		Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(asset);
+		byte[] data = new byte[stream.Length];
+		stream.Read(data, 0, (int)stream.Length);
+		
+		Texture2D texture2D = new Texture2D(256, 256);
+		texture2D.LoadImage(data);
+		
+		return Sprite.Create(texture2D, new Rect(0, 0, texture2D.width, texture2D.height), new Vector2(0, 0), 100.0f);
 	}
 }
 
