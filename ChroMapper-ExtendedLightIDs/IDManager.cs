@@ -4,6 +4,7 @@ using UnityEngine;
 
 using Beatmap.Base;
 using Beatmap.Enums;
+using Beatmap.Helper;
 
 namespace ChroMapper_ExtendedLightIDs {
 
@@ -42,7 +43,6 @@ public class IDManager {
 			var ev = (BaseEvent)o;
 			if (ev.CustomLightID != null) {
 				IDsForType(ev.Type).UnionWith(ev.CustomLightID);
-				Debug.Log(string.Join(",", IDsForType(ev.Type).ToList()));
 			}
 		}
 		
@@ -59,6 +59,39 @@ public class IDManager {
 				++i;
 			}
 		}
+	}
+	
+	public void AddIDs(int type, int begin, int end) {
+		Debug.Log($"Add {type} {begin}-{end}");
+		
+		if (type < 0 || begin < 0 || end < 0 || end < begin) return;
+		
+		var generatedObjects = new List<BaseObject>();
+		
+		var container = (EventGridContainer)BeatmapObjectContainerCollection
+			.GetCollectionForType(Beatmap.Enums.ObjectType.Event);
+		
+		var potential_conflics = container.GetBetween(0, 0);
+		
+		for (int i = begin; i <= end; ++i) {
+			var off = BeatmapFactory.Event(0, type, 0);
+			off.CustomLightID = new int[] { i };
+			off = BeatmapFactory.Clone(off);
+			if (potential_conflics.Any(x => x.IsConflictingWith(off))) {
+				continue;
+			}
+			container.SpawnObject(off, false, false);
+			generatedObjects.Add(off);
+		}
+		
+		BeatmapActionContainer.AddAction(
+			new BeatmapObjectPlacementAction(generatedObjects, new List<BaseObject>(), "Adding ExtendedLightIDs Placeholders")
+		);
+		
+		RefreshIDs();
+		
+		container.RefreshPool(true);
+		container.PropagationEditing = container.PropagationEditing;
 	}
 }
 
