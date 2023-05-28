@@ -21,10 +21,10 @@ public class Plugin {
 		
 		LoadInitialMap.PlatformLoadedEvent += (p) => manager.PlatformLoaded(p);
 		LoadInitialMap.LevelLoadedEvent += () => manager.RefreshIDs();
-		CMInputCallbackInstaller.InputInstance.EventGrid.ToggleLightPropagation.performed += (_) => manager.RefreshIDs();
-		CMInputCallbackInstaller.InputInstance.EventGrid.CycleLightPropagationUp.performed += (_) => manager.RefreshIDs();
-		CMInputCallbackInstaller.InputInstance.EventGrid.CycleLightPropagationDown.performed += (_) => manager.RefreshIDs();
-		CMInputCallbackInstaller.InputInstance.EventGrid.ToggleLightIdMode.performed += (_) => manager.RefreshIDs();
+		CMInputCallbackInstaller.InputInstance.EventGrid.ToggleLightPropagation.performed += (_) => manager?.RefreshIDs();
+		CMInputCallbackInstaller.InputInstance.EventGrid.CycleLightPropagationUp.performed += (_) => manager?.RefreshIDs();
+		CMInputCallbackInstaller.InputInstance.EventGrid.CycleLightPropagationDown.performed += (_) => manager?.RefreshIDs();
+		CMInputCallbackInstaller.InputInstance.EventGrid.ToggleLightIdMode.performed += (_) => manager?.RefreshIDs();
 		
 		ExtensionButtons.AddButton(
 			LoadSprite("ChroMapper_ExtendedLightIDs.Resources.Icon.png"),
@@ -35,6 +35,9 @@ public class Plugin {
 	private void SceneLoaded(Scene scene, LoadSceneMode mode) {
 		if (scene.buildIndex == 3) {
 			manager = new IDManager();
+		}
+		else {
+			manager = null;
 		}
 	}
 	
