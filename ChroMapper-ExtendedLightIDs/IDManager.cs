@@ -18,8 +18,13 @@ public class IDManager {
 	
 	public SortedSet<int> IDsForType(int type) {
 		if (!ids.ContainsKey(type)) {
-			var lm = descriptor.LightingManagers[type];
-			ids.Add(type, new SortedSet<int>(lm.LightIDPlacementMap.Values));
+			if (descriptor.LightingManagers.Count() > type) {
+				var lm = descriptor.LightingManagers[type];
+				ids.Add(type, new SortedSet<int>(lm.LightIDPlacementMap.Values));
+			}
+			else {
+				ids.Add(type, new SortedSet<int>());
+			}
 		}
 		return ids[type];
 	}
@@ -48,6 +53,7 @@ public class IDManager {
 		
 		// Add them all
 		foreach (var type in ids) {
+			if (type.Key >= descriptor.LightingManagers.Count()) continue;
 			var lm = descriptor.LightingManagers[type.Key];
 			
 			var i = 0;
