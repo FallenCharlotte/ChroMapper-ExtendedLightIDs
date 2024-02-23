@@ -1,3 +1,10 @@
+v0.3.1
+	Fix version/UpdateChecker
+
+v0.3
+	Update build tools and support UpdateChecker
+	Support CM stable 0.9.690 and dev 0.10.*
+
 v0.2.2
 	Workaround crash when trying to add types
 
