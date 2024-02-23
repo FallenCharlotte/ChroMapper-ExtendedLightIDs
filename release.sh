@@ -30,6 +30,8 @@ fi
 rm "$CHANGELOG".old
 
 git add $PROJECT/Properties/AssemblyInfo.cs
+git add $PROJECT/manifest.json
+git add Changelog.txt
 git commit -m "v${short}"
 git tag "v${short}"
 msbuild
