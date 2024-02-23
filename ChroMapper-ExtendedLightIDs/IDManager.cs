@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -44,10 +45,13 @@ public class IDManager {
 		}
 		
 		// Get IDs from events
-		foreach (var o in BeatmapObjectContainerCollection.GetCollectionForType(Beatmap.Enums.ObjectType.Event).UnsortedObjects) {
-			var ev = (BaseEvent)o;
-			if (ev.CustomLightID != null) {
-				IDsForType(ev.Type).UnionWith(ev.CustomLightID);
+		List<BaseEvent> events = new List<BaseEvent>();
+		var collection = BeatmapObjectContainerCollection.GetCollectionForType(Beatmap.Enums.ObjectType.Event) as EventGridContainer;
+		foreach (var et in collection.AllLightEvents.Values) {
+			foreach (var ev in et) {
+				if (ev.CustomLightID != null) {
+					IDsForType(ev.Type).UnionWith(ev.CustomLightID);
+				}
 			}
 		}
 		
@@ -74,30 +78,30 @@ public class IDManager {
 		
 		var generatedObjects = new List<BaseObject>();
 		
-		var container = (EventGridContainer)BeatmapObjectContainerCollection
-			.GetCollectionForType(Beatmap.Enums.ObjectType.Event);
+		var collection = BeatmapObjectContainerCollection.GetCollectionForType(Beatmap.Enums.ObjectType.Event) as EventGridContainer;
 		
-		var potential_conflics = container.GetBetween(0, 0);
+		var actions = new List<BeatmapAction>();
 		
 		for (int i = begin; i <= end; ++i) {
+			if (IDsForType(type).Contains(i)) {
+				continue;
+			}
 			var off = BeatmapFactory.Event(0, type, 0);
 			off.CustomLightID = new int[] { i };
 			off = BeatmapFactory.Clone(off);
-			if (potential_conflics.Any(x => x.IsConflictingWith(off))) {
-				continue;
-			}
-			container.SpawnObject(off, false, false);
 			generatedObjects.Add(off);
+			(collection as BeatmapObjectContainerCollection).SpawnObject(off, out List<BaseObject> conflicting);
+			actions.Add(new BeatmapObjectPlacementAction(off, conflicting, "ExtendedLightIDs Placeholder"));
 		}
 		
 		BeatmapActionContainer.AddAction(
-			new BeatmapObjectPlacementAction(generatedObjects, new List<BaseObject>(), "Adding ExtendedLightIDs Placeholders")
+			new ActionCollectionAction(actions, false, false, "Adding ExtendedLightIDs Placeholders")
 		);
 		
 		RefreshIDs();
 		
-		container.RefreshPool(true);
-		container.PropagationEditing = container.PropagationEditing;
+		collection.RefreshPool(true);
+		collection.PropagationEditing = collection.PropagationEditing;
 	}
 }
 
