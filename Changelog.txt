@@ -1,0 +1,10 @@
+v0.2.2
+	Workaround crash when trying to add types
+
+v0.2.1
+	Fix error when pressing "p" in a menu
+
+v0.2
+	Adds a UI for adding lanes!
+	Allows skipping lanes
+	Dropped V2 enhancement type guessing

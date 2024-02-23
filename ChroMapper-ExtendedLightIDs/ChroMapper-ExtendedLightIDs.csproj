@@ -83,6 +83,7 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\Icon.png" />
+    <EmbeddedResource Include="manifest.json" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
