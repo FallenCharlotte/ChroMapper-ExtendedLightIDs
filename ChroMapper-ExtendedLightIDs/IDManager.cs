@@ -21,7 +21,7 @@ public class IDManager {
 		if (!ids.ContainsKey(type)) {
 			if (descriptor.LightingManagers.Count() > type) {
 				var lm = descriptor.LightingManagers[type];
-				if (lm == null || lm.LightIDPlacementMap == null) {
+				if (lm.LightIDPlacementMap == null) {
 					lm.LoadOldLightOrder();
 				}
 				ids.Add(type, new SortedSet<int>(lm.LightIDPlacementMap.Values));
