@@ -89,7 +89,7 @@ public class IDManager {
 			if (IDsForType(type).Contains(i)) {
 				continue;
 			}
-			var off = BeatmapFactory.Event(0, type, 0);
+			var off = new BaseEvent { JsonTime = 0, Type = type, Value = 0 };
 			off.CustomLightID = new int[] { i };
 			off = BeatmapFactory.Clone(off);
 			generatedObjects.Add(off);
