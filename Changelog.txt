@@ -1,3 +1,6 @@
+vv0.3.2
+	Fix for CM v0.11.783
+
 v0.3.1
 	CM Dev optimized something
 
