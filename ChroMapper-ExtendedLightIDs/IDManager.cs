@@ -10,27 +10,44 @@ using Beatmap.Helper;
 namespace ChroMapper_ExtendedLightIDs {
 
 public class IDManager {
+	private Dictionary<int, SortedSet<int>> LightIDMap = new Dictionary<int, SortedSet<int>>();
+	
+#if CHROMPER_13
 	private PlatformDescriptor descriptor;
-	private Dictionary<int, SortedSet<int>> ids = new Dictionary<int, SortedSet<int>>();
 	
 	public void PlatformLoaded(PlatformDescriptor descriptor) {
 		this.descriptor = descriptor;
 	}
+#else
+	private EnvironmentDescriptor descriptor;
+	
+	public void PlatformLoaded(EnvironmentDescriptor descriptor) {
+		this.descriptor = descriptor;
+	}
+#endif
 	
 	public SortedSet<int> IDsForType(int type) {
-		if (!ids.ContainsKey(type)) {
+		if (!LightIDMap.ContainsKey(type)) {
+#if CHROMPER_13
 			if (descriptor.LightingManagers.Count() > type) {
 				var lm = descriptor.LightingManagers[type];
 				if (lm.LightIDPlacementMap == null) {
 					lm.LoadOldLightOrder();
 				}
-				ids.Add(type, new SortedSet<int>(lm.LightIDPlacementMap.Values));
+				LightIDMap.Add(type, new SortedSet<int>(lm.LightIDPlacementMap.Values));
 			}
+#else
+			var types = descriptor.BasicEventEffectManager.EventTypeToEffects;
+			if (types.ContainsKey(type)) {
+				var lm = types[type][0] as BasicLightEffect;
+				LightIDMap.Add(type, new SortedSet<int>(lm.LightIDToLane.Values));
+			}
+#endif
 			else {
-				ids.Add(type, new SortedSet<int>());
+				LightIDMap.Add(type, new SortedSet<int>());
 			}
 		}
-		return ids[type];
+		return LightIDMap[type];
 	}
 	
 	public void RefreshIDs() {
@@ -59,7 +76,8 @@ public class IDManager {
 		}
 		
 		// Add them all
-		foreach (var type in ids) {
+		foreach (var type in LightIDMap) {
+#if CHROMPER_13
 			if (type.Key >= descriptor.LightingManagers.Count()) continue;
 			var lm = descriptor.LightingManagers[type.Key];
 			
@@ -71,6 +89,19 @@ public class IDManager {
 				lm.LightIDPlacementMapReverse.Add(id, i);
 				++i;
 			}
+#else
+			if (!descriptor.BasicEventEffectManager.EventTypeToEffects.ContainsKey(type.Key)) continue;
+			var lm = descriptor.BasicEventEffectManager.EventTypeToEffects[type.Key][0] as BasicLightEffect;
+			
+			var i = 0;
+			lm.LightIDToLane.Clear();
+			lm.LaneToLightID.Clear();
+			foreach (var id in type.Value) {
+				lm.LightIDToLane.Add(id, i);
+				lm.LaneToLightID.Add(id);
+				++i;
+			}
+#endif
 		}
 	}
 	

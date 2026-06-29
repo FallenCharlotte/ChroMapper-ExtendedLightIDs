@@ -19,8 +19,12 @@ public class Plugin {
 	private void Init() {
 		SceneManager.sceneLoaded += SceneLoaded;
 		
+#if CHROMPER_13
 		LoadInitialMap.PlatformLoadedEvent += (p) => manager.PlatformLoaded(p);
 		LoadInitialMap.LevelLoadedEvent += () => manager.RefreshIDs();
+#else
+		LoadInitialMap.OnLevelLoaded += () => manager.RefreshIDs();
+#endif
 		CMInputCallbackInstaller.InputInstance.EventGrid.ToggleLightPropagation.performed += (_) => manager?.RefreshIDs();
 		CMInputCallbackInstaller.InputInstance.EventGrid.CycleLightPropagationUp.performed += (_) => manager?.RefreshIDs();
 		CMInputCallbackInstaller.InputInstance.EventGrid.CycleLightPropagationDown.performed += (_) => manager?.RefreshIDs();
@@ -35,8 +39,14 @@ public class Plugin {
 	private void SceneLoaded(Scene scene, LoadSceneMode mode) {
 		if (scene.buildIndex == 3) {
 			manager = new IDManager();
+			
+#if !CHROMPER_13
+			var context = Resources.FindObjectsOfTypeAll<BeatmapRuntimeContext>().FirstOrDefault();
+			
+			context.OnEnvironmentLoaded += (d) => manager.PlatformLoaded(d);
+#endif
 		}
-		else {
+		else if (scene.buildIndex < 3){
 			manager = null;
 		}
 	}
