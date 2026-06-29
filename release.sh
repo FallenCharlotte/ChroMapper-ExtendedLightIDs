@@ -1,9 +1,13 @@
 #!/bin/bash
 
 PROJECT="$(basename "$(pwd)")"
+NAME="${PROJECT#ChroMapper-}"
 CHANGELOG="Changelog.txt"
-ver=$1
-short=$1
+DEV_BRANCH="dev"
+tag=$1
+ver="$(grep -Eo '(([0-9]+\.){0,3}[0-9]+)' <<< "$1")"
+# Short version with v: the base tag for the UpdateChecker manifest
+mver="v${ver}"
 
 while [ "$(echo "$ver" | tr -dc '.' | awk '{ print length; }')" -lt "3" ]
 do
@@ -12,10 +16,10 @@ done
 
 sed -i 's/AssemblyVersion(.*)/AssemblyVersion("'$ver'")/' $PROJECT/Properties/AssemblyInfo.cs
 sed -i 's/AssemblyFileVersion(.*)/AssemblyFileVersion("'$ver'")/' $PROJECT/Properties/AssemblyInfo.cs
-sed -i 's/"version": ".*",/"version": "v'$short'",/' $PROJECT/manifest.json
+sed -i 's/"version": ".*",/"version": "'$mver'",/' $PROJECT/manifest.json
 
 mv "$CHANGELOG"{,.old}
-echo "v${short}" > "$CHANGELOG"
+echo "${tag}" > "$CHANGELOG"
 git log $(git describe --tags --abbrev=0)..HEAD --pretty=format:'	%s' >> "$CHANGELOG"
 echo -e "\n" >> "$CHANGELOG"
 cat "$CHANGELOG".old >> "$CHANGELOG"
@@ -29,9 +33,30 @@ if [[ $_status != 0 ]]; then
 fi
 rm "$CHANGELOG".old
 
-git add $PROJECT/Properties/AssemblyInfo.cs
-git add $PROJECT/manifest.json
-git add Changelog.txt
-git commit -m "v${short}"
-git tag "v${short}"
-msbuild
+git add $PROJECT/Properties/AssemblyInfo.cs $PROJECT/manifest.json "$CHANGELOG"
+git commit -m "${tag}"
+git tag "${tag}"
+
+dotnet build
+dotnet build -p:DefineConstants="CHROMPER_13"
+
+pushd ${PROJECT}/bin/Stable
+zip "ChroMapper-13-${NAME} ${tag}.zip" Plugins/${PROJECT}.dll
+popd
+
+pushd ${PROJECT}/bin/Dev
+zip "ChroMapper-14-${NAME} ${tag}.zip" Plugins/${PROJECT}.dll
+popd
+
+echo "Check..."
+read || exit
+
+git push
+
+git checkout main
+git merge --ff-only $DEV_BRANCH
+
+git push
+git push --tags
+
+git checkout $DEV_BRANCH
