@@ -1,3 +1,6 @@
+v0.3.3
+	Chromper 14 support
+
 v0.3.2
 	Fix for CM v0.11.783
 
